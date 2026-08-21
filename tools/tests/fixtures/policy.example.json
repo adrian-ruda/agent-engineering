@@ -1,0 +1,13 @@
+{
+  "promote": { "uses": 5, "success_rate": 0.7 },
+  "retire": { "uses": 3, "success_rate": 0.3 },
+  "fallback_domain": "General",
+  "domains": [
+    { "label": "Data & migrations", "match": ["migration", "schema", "backfill"] },
+    { "label": "Delivery", "match": ["release", "deploy", "rollback", "ci-"] },
+    { "label": "Security", "match": ["security", "secret", "auth", "permission"] },
+    { "label": "Interface", "match": ["ui-", "component", "a11y"] },
+    { "label": "Testing", "match": ["test", "fixture", "flaky"] },
+    { "label": "Documentation", "match": ["doc", "changelog", "adr"] }
+  ]
+}

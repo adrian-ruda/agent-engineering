@@ -2,15 +2,16 @@
 
 **The spec-driven cycle we put coding agents through — and the engine that decides when a phase is actually finished.**
 
+[![CI](https://github.com/adrian-ruda/agent-engineering/actions/workflows/ci.yml/badge.svg)](https://github.com/adrian-ruda/agent-engineering/actions/workflows/ci.yml)
 ![python](https://img.shields.io/badge/python-3.10%20%7C%203.13-blue.svg)
 ![dependencies](https://img.shields.io/badge/dependencies-standard%20library-blue.svg)
 ![license](https://img.shields.io/badge/license-MIT-blue.svg)
 
-<sub>No green test badge here on purpose. A hand-written badge stays green after
-the suite breaks, and a repository about systems that misreport their own state
-has no business shipping one. The suite runs on both interpreters on every push
-(<a href=".github/workflows/ci.yml"><code>.github/workflows/ci.yml</code></a>);
-the count is one command away in <a href="#tests">Tests</a>.</sub>
+<sub>The first badge is the workflow's own status — it goes red when the suite
+breaks. There is deliberately no hand-written <code>tests passing</code> badge
+beside it: a number typed into a URL stays green forever, and a repository about
+systems that misreport their own state has no business shipping one. The count
+is one command away in <a href="#tests">Tests</a>.</sub>
 
 ---
 
@@ -142,12 +143,29 @@ Two consequences we had to learn the hard way, both now enforced in code:
 | `engine/sdd_status.py` | 1,011 | The oracle. Walks a change directory, classifies every phase, counts task progress, and emits the JSON receipt. Standard library only. |
 | `engine/sdd_apply_gate.sh` | 213 | The blocking hook. Called before any agent is allowed to write code. Checks the artifacts, asks the engine, and refuses on anything short of a clean answer. Exit `0` approved · `1` blocked · `2` bypassed with a logged reason. |
 | `engine/tests/` | 2,888 | 152 tests across 8 files. |
+| `tools/skill_registry.py` | 553 | Grades the roster of capabilities an orchestrator can reach for, and regenerates the index from what the files actually declare. |
+| `tools/tests/` | 978 | 114 tests across 4 files. |
 | `.github/workflows/ci.yml` | 46 | Matrix on Python 3.10 and 3.13. |
 
 The engine has exactly one coupling point to whatever repository hosts it: the
 changes root, resolved `--base` → `$SDD_STATUS_BASE` → `./sdd/changes`. The gate
 reads the same variable on purpose — if each resolved its own, the gate could
 approve one tree while the engine judged another.
+
+### The two chapters
+
+The cycle above answers *what has to be true before this step runs*. Two
+questions sit on either side of it, and each has its own document.
+
+| | Question | Document |
+|---|---|---|
+| **Before** | Does this work belong in the cycle at all — and when do I stop? | [Routing and stop policy](docs/routing.md) |
+| **Around** | The orchestrator reaches for a capability. Is that capability any good? | [Capability lifecycle](docs/capability-lifecycle.md) |
+
+Routing is the arithmetic: thresholds for delegating, a context budget, and the
+rule that a gate cannot block its own repair. The lifecycle chapter is about
+grading the instructions themselves — where the score comes from, and the
+retirement rule we refused to write.
 
 ---
 

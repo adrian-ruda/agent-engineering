@@ -10,15 +10,14 @@ jobs:
     name: pytest (py${{ matrix.python-version }})
     runs-on: ubuntu-latest
     strategy:
-      # Sin fail-fast: si el suite rompe solo en el piso de versión, queremos
-      # ver TAMBIÉN el resultado de la otra. Un cancel automático esconde
-      # justo la mitad del dato que hace falta para diagnosticar.
+      # No fail-fast: when the suite breaks only on the version floor, we want
+      # the other version's result too. An automatic cancel hides exactly the
+      # half of the data needed to tell those two cases apart.
       fail-fast: false
       matrix:
-        # 3.10 es el PISO REAL, no una elección de gusto: las anotaciones del
-        # engine usan uniones PEP 604 (`Path | None`) evaluadas en tiempo de
-        # `def`, así que 3.9 explota al importar el módulo.
-        # 3.13 es el techo actual soportado.
+        # 3.10 is the real floor, not a preference: the engine's annotations
+        # use PEP 604 unions (`Path | None`) evaluated at `def` time, so 3.9
+        # raises on import. 3.13 is the current ceiling.
         python-version: ["3.10", "3.13"]
 
     steps:
@@ -31,16 +30,31 @@ jobs:
       - name: Install pytest
         run: python -m pip install --upgrade pip pytest
 
-      # Los 8 tests end-to-end del gate lanzan `bash engine/sdd_apply_gate.sh`,
-      # que a su vez llama a `python3`. setup-python pone SU intérprete al
-      # frente del PATH como `python` y como `python3`, así que el subproceso
-      # corre en la versión de la matriz y no en el python del sistema.
-      # Sin esta verificación, esos 8 tests podrían estar validando siempre el
-      # mismo intérprete y la matriz sería decorativa.
+      # The gate's 8 end-to-end tests run `bash engine/sdd_apply_gate.sh`, which
+      # in turn calls `python3`. setup-python puts its interpreter at the front
+      # of PATH as both `python` and `python3`, so the subprocess runs the
+      # matrix version rather than the system one. Without this check those 8
+      # tests could be validating the same interpreter on every leg, and the
+      # matrix would be decorative.
       - name: Verify python3 resolves to the matrix interpreter
         run: |
           python3 -c 'import sys; print(sys.version)'
           python3 -c 'import sys; assert sys.version_info[:2] == tuple(int(x) for x in "${{ matrix.python-version }}".split(".")), sys.version'
 
-      - name: Run test suite
+      - name: Run engine test suite
         run: python -m pytest engine/tests -q
+
+      # A separate step, not a combined `pytest engine tools`, so each suite
+      # reports its own total (152 and 114) — the number its own document
+      # cites. A merged run reports an aggregate that matches neither.
+      #
+      # `!cancelled()` for the same reason as `fail-fast: false` above: when the
+      # engine breaks we still want to know whether the registry broke too. A
+      # step skipped because the previous one failed hides half the data.
+      #
+      # This suite does not depend on `python3` resolving to the matrix
+      # interpreter: it launches the script with `sys.executable`, so the
+      # subprocess inherits the right version by construction.
+      - name: Run capability registry test suite
+        if: ${{ !cancelled() }}
+        run: python -m pytest tools/tests -q
