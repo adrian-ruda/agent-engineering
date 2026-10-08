@@ -2,6 +2,21 @@
 
 **The spec-driven cycle we put coding agents through — and the engine that decides when a phase is actually finished.**
 
+> **Retired in 2026-10.** The cycle is no longer how work moves where this engine
+> came from, and the engine is no longer wired into anything. Both stay published,
+> with their tests still running in CI, because of what they produced: **four
+> generations of the same defect — a status that reported green over unfinished
+> work — each one found by a reviewer reading the code cold, and not one of them
+> found by whoever had just written it.**
+>
+> That finding is the content of this repository, and it is worth more than the
+> cycle ever was. The replacement is smaller and lives in fewer artifacts:
+> understand before writing, one bounded unit of work per run, and a review that
+> runs on the candidate rather than on the accumulated branch. What outlived the
+> cycle are the two ideas it was built on — **a phase's status is computed from
+> the artifacts and never from the agent's own summary, and a gate must be able
+> to say no.**
+
 [![CI](https://github.com/adrian-ruda/agent-engineering/actions/workflows/ci.yml/badge.svg)](https://github.com/adrian-ruda/agent-engineering/actions/workflows/ci.yml)
 ![python](https://img.shields.io/badge/python-3.10%20%7C%203.13-blue.svg)
 ![dependencies](https://img.shields.io/badge/dependencies-standard%20library-blue.svg)
@@ -15,10 +30,10 @@ is one command away in <a href="#tests">Tests</a>.</sub>
 
 ---
 
-## The cycle
+## The cycle, as it ran
 
-Eight phases. Every one of them leaves an artifact on disk. Nothing moves forward
-because an agent said it was done — it moves forward because a program read the
+Eight phases. Every one of them left an artifact on disk. Nothing moved forward
+because an agent said it was done — it moved forward because a program read the
 artifacts and said so.
 
 ```mermaid
@@ -477,6 +492,11 @@ What is ours is the instrumentation: the Python engine, the `in_progress` state,
 the task-progress fields, the anti-shortcut rule, and the fail-closed routing —
 built because operating a good method at volume surfaced the places where it had
 no measurement.
+
+And the retirement went the same way. The base layer retired the eight-phase
+cycle itself, and the cycle here was retired with it and for the same reason: the
+method it encoded had grown into more artifact than the decisions inside it
+needed.
 
 Full breakdown of what came from where: **[NOTICE.md](NOTICE.md)**.
 
